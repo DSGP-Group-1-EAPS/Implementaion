@@ -1,8 +1,9 @@
-from joblib import load
+import pickle
 
 
 def load_model(model_path):
-    return load(model_path)
+    with open(model_path, 'rb') as file:
+        return pickle.load(file)
 
 
 def get_time_series_forecast(model, steps):
@@ -11,5 +12,6 @@ def get_time_series_forecast(model, steps):
 
 
 def add_to_dataset(df, forecast):
-    df['Forecast'] = forecast
+    print(forecast)
+    df['MonthlyTotal'] = forecast
     return df

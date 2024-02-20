@@ -1,8 +1,20 @@
-from joblib import load
+import pickle
+import pandas as pd
+
+
+def onehot_encode(df, column, prefix):
+    df = df.copy()
+
+    dummies = pd.get_dummies(df[column], prefix=prefix)
+    df = pd.concat([df, dummies], axis=1)
+    df = df.drop(column, axis=1)
+
+    return df
 
 
 def load_model(model_path):
-    return load(model_path)
+    with open(model_path, 'rb') as file:
+        return pickle.load(file)
 
 
 def get_features(df, selected_features):
@@ -35,7 +47,7 @@ def get_high_prob_employee_codes(model, df, predictions):
         print(f"Predicted: {predicted}, Probability: {probability}")
 
     # Filter predictions with probability > 0.9 and predicted as category B
-    high_confidence_category_b = [df.iloc[i]['Encoded Code'] for i, (_, predicted, probability) in
+    high_confidence_category_b = [df.iloc[i]['Encoded Code'] for i, (predicted, probability) in
                                   enumerate(zip(predictions, confidence_level_b)) if
                                   predicted == 'B' and probability > 0.9]
 
