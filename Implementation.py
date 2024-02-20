@@ -40,7 +40,12 @@ def main():
             'C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/arima_model.pkl')
         forecast = TimeSeriesModel.get_time_series_forecast(ts_model, 3)
         print(forecast[22])
-        updated_df = TimeSeriesModel.add_to_dataset(df, forecast[22])
+        if df['LeaveYear'][0] == 2023 and df['LeaveMonth'][0] == 9:
+            updated_df = TimeSeriesModel.add_to_dataset(df, forecast[22])
+        elif df['LeaveYear'][0] == 2023 and df['LeaveMonth'][0] == 10:
+            updated_df = TimeSeriesModel.add_to_dataset(df, forecast[23])
+        elif df['LeaveYear'][0] == 2023 and df['LeaveMonth'][0] == 11:
+            updated_df = TimeSeriesModel.add_to_dataset(df, forecast[24])
 
         print("ARIMA Forecast done")
         df_selected = RandomForestClassificationModel.get_features(updated_df, rf_selected_features)
