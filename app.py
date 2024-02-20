@@ -8,7 +8,7 @@ app = Flask(__name__, template_folder='Templates')
 rf_model = load('C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/rf_model.joblib')
 
 # Selected features for prediction
-selected_features = ['DaysWorked', 'DayOfWeek', 'Encoded Code', 'LeaveMonth', 'Encoded Status',
+rf_selected_features = ['DaysWorked', 'DayOfWeek', 'Encoded Code', 'LeaveMonth', 'Encoded Status',
                      'Encoded Absenteeism Type', 'Encoded Shift', 'LeaveYear', 'NumOfLeaveDays',
                      'Reason_0', 'Reason_1', 'Reason_2', 'Reason_3', 'Reason_4', 'Reason_5',
                      'Reason_6', 'Reason_7', 'Reason_8', 'Reason_9', 'Reason_10', 'Reason_11',
@@ -38,7 +38,7 @@ def main():
             return f'Error reading Excel file: {e}', 400
 
         # Select only the relevant features for prediction
-        df_selected = df[selected_features]
+        df_selected = df[rf_selected_features]
 
         # Make predictions using the trained model
         predictions = rf_model.predict(df_selected)
@@ -63,6 +63,15 @@ def main():
 
         # Return JSON response
         return jsonify(response)
+
+def getTimeSeriesData(Dataset):
+    leave_days_by_month = Dataset.groupby(['LeaveYear', 'LeaveMonth']).size().reset_index(name='TotalLeaveDays')
+    print(leave_days_by_month)
+    return leave_days_by_month['TotalLeaveDays']
+def getTimeSeriesForecast(Model, Steps):
+    forecast = Model.forcast(steps=Steps)
+    return forecast
+
 
 if __name__ == '__main__':
     app.run(debug=True)
