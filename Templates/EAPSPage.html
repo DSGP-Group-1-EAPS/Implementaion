@@ -3,13 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Excel File</title>
+    <title>Employee Absenteeism Prediction System</title>
+    <style>
+        /* Body Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+
+        /* Header Styles */
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Form Styles */
+        .upload-form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .upload-form input[type="file"] {
+            margin-right: 10px;
+        }
+
+        .upload-form button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* Predictions Styles */
+        .predictions {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .predictions h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .prediction-item {
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
     <h1>Upload Excel File</h1>
-    <form action="{{url_for('main') }}" method="post" enctype="multipart/form-data">
-        <input type="file" name="file" accept=".xls,.xlsx">
-        <button type="submit">Upload</button>
-    </form>
+    <div class="upload-form">
+        <form action="{{ url_for('main') }}" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" accept=".xls,.xlsx">
+            <button type="submit">Upload</button>
+        </form>
+    </div>
+
+
+    <div class="predictions">
+        <h2>Leave Reasons</h2>
+        <img src="Images\leave_reason_plot.png" alt="Leave Reasons">
+    </div>
+
+
+    <div class="predictions">
+        <h2>Predictions</h2>
+        <ul>
+            {% for prediction in predictions %}
+            <li class="prediction-item">{{ prediction }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
 </body>
 </html>
