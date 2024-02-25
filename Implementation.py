@@ -1,5 +1,3 @@
-# app.py
-
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import RandomForestClassificationModel
@@ -16,7 +14,13 @@ rf_selected_features = ['DaysWorked', 'DayOfWeek', 'Encoded Code', 'LeaveMonth',
                         'Reason_12', 'Reason_13', 'Reason_14', 'Reason_15', 'Reason_16', 'Reason_17',
                         'Reason_18']
 
-@app.route('/', methods=['GET', 'POST'])
+
+@app.route('/')
+def index():
+    return render_template('Main.html')
+
+
+@app.route('/EAPSPage', methods=['GET', 'POST'])
 def main():
     global updated_df
     if request.method == 'GET':
@@ -36,7 +40,8 @@ def main():
         except Exception as e:
             return f'Error reading Excel file: {e}', 400
 
-        ts_model = TimeSeriesModel.load_model('C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/arima_model.pkl')
+        ts_model = TimeSeriesModel.load_model(
+            'C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/arima_model.pkl')
         forecast = TimeSeriesModel.get_time_series_forecast(ts_model, 3)
         print(forecast[22])
         if df['LeaveYear'][0] == 2023 and df['LeaveMonth'][0] == 9:
@@ -48,12 +53,13 @@ def main():
 
         print("ARIMA Forecast done")
         df_selected = RandomForestClassificationModel.get_features(updated_df, rf_selected_features)
-        rf_model = RandomForestClassificationModel.load_model('C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/rf_model.pkl')
+        rf_model = RandomForestClassificationModel.load_model(
+            'C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/rf_model.pkl')
         predictions = RandomForestClassificationModel.predict(rf_model, df_selected)
 
-        employee_codes = RandomForestClassificationModel.get_high_prob_employee_codes(rf_model, df_selected, predictions)
+        employee_codes = RandomForestClassificationModel.get_high_prob_employee_codes(rf_model, df_selected,
+                                                                                      predictions)
         predictions_list = list(employee_codes)
-
 
         leave_reason_counts = df['Reason'].value_counts()
 
@@ -65,10 +71,10 @@ def main():
         plt.ylabel('Number of Leaves')
         plt.xticks(rotation=45)
         plt.tight_layout()  # Adjust layout to prevent overlapping labels
-        leave_reason_plot_path = 'Images/leave_reason_plot.png'
+        leave_reason_plot_path = 'Images/leave_reason_plot.jpeg'
         plt.savefig(leave_reason_plot_path)
 
-        return render_template('EAPSPage.html', predictions=predictions_list)
+        return render_template('EAPSPage.html', predictions=predictions_list, leave_reason_plot_path=leave_reason_plot_path)
 
 
 if __name__ == '__main__':
