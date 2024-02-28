@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import RandomForestClassificationModel
 import TimeSeriesModel
+import SARIMA_Model
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -40,16 +41,29 @@ def main():
         except Exception as e:
             return f'Error reading Excel file: {e}', 400
 
+        sewing_model = SARIMA_Model.load_model(
+            'C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/sewing_sarima_model.pkl')
+        sewing_forecast = SARIMA_Model.get_time_series_forecast(sewing_model, 3)
+
+        mat_model = SARIMA_Model.load_model(
+            'C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/maternity_sarima_model.pkl')
+        mat_forecast = SARIMA_Model.get_time_series_forecast(mat_model, 3)
+
+        jumper_model = SARIMA_Model.load_model(
+            'C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/jumper_sarima_model.pkl')
+        jumper_forecast = SARIMA_Model.get_time_series_forecast(jumper_model, 3)
+
+        print("SARIMA Forecast done")
         ts_model = TimeSeriesModel.load_model(
             'C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/arima_model.pkl')
         forecast = TimeSeriesModel.get_time_series_forecast(ts_model, 3)
         print(forecast[22])
         if df['LeaveYear'][0] == 2023 and df['LeaveMonth'][0] == 9:
-            updated_df = TimeSeriesModel.add_to_dataset(df, forecast[22])
+            updated_df = SARIMA_Model.add_to_dataset(df, sewing_forecast[22], mat_forecast[22], jumper_forecast[22])
         elif df['LeaveYear'][0] == 2023 and df['LeaveMonth'][0] == 10:
-            updated_df = TimeSeriesModel.add_to_dataset(df, forecast[23])
+            updated_df = SARIMA_Model.add_to_dataset(df, sewing_forecast[23], mat_forecast[23], jumper_forecast[23])
         elif df['LeaveYear'][0] == 2023 and df['LeaveMonth'][0] == 11:
-            updated_df = TimeSeriesModel.add_to_dataset(df, forecast[24])
+            updated_df = SARIMA_Model.add_to_dataset(df, sewing_forecast[24], mat_forecast[24], jumper_forecast[24])
 
         print("ARIMA Forecast done")
         df_selected = RandomForestClassificationModel.get_features(updated_df, rf_selected_features)
@@ -74,7 +88,8 @@ def main():
         leave_reason_plot_path = 'Images/leave_reason_plot.jpeg'
         plt.savefig(leave_reason_plot_path)
 
-        return render_template('EAPSPage.html', predictions=predictions_list, leave_reason_plot_path=leave_reason_plot_path)
+        return render_template('EAPSPage.html', predictions=predictions_list,
+                               leave_reason_plot_path=leave_reason_plot_path)
 
 
 if __name__ == '__main__':
