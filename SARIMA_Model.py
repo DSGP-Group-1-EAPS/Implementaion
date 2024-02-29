@@ -14,7 +14,7 @@ def get_time_series_forecast(model, steps):
 
 def add_to_dataset(df, sewing_forecast, mat_forecast, jumper_forecast):
     for index, row in df.iterrows():
-        sub_dept = row['Department']
+        sub_dept = row['MainDepartment']
         if sub_dept.startswith('Sewing Team'):
             df.at[index, 'MonthlyTotal'] = sewing_forecast
         elif sub_dept.startswith('Maternity'):

@@ -46,7 +46,7 @@ def main():
         sewing_forecast = SARIMA_Model.get_time_series_forecast(sewing_model, 3)
 
         mat_model = SARIMA_Model.load_model(
-            'C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/maternity_sarima_model.pkl')
+            'C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/mat_sarima_model.pkl')
         mat_forecast = SARIMA_Model.get_time_series_forecast(mat_model, 3)
 
         jumper_model = SARIMA_Model.load_model(
@@ -74,7 +74,7 @@ def main():
         employee_codes = RandomForestClassificationModel.get_high_prob_employee_codes(rf_model, df_selected,
                                                                                       predictions)
         predictions_list = list(employee_codes)
-
+        print(len(predictions_list))
         leave_reason_counts = df['Reason'].value_counts()
 
         # Create bar plot for leave reasons
