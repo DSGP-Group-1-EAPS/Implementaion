@@ -5,6 +5,7 @@ import TimeSeriesModel
 import SARIMA_Model
 import matplotlib.pyplot as plt
 import seaborn as sns
+import boto3
 
 app = Flask(__name__, template_folder='Templates')
 
@@ -40,7 +41,14 @@ def main():
             df = pd.read_excel(file)
         except Exception as e:
             return f'Error reading Excel file: {e}', 400
+        session = boto3.Session(
+            aws_access_key_id='AKIAZQ3DTKYSPHFJXFEG',
+            aws_secret_access_key='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',
+            region_name='ap-south-1'
+        )
 
+        s3 = session.resource('s3')
+        s3.Bucket('eapss3').upload_fileobj(file, f"{df['LeaveYear'][0]}_{df['LeaveMonth'][0]}_data.xlsx")
         sewing_model = SARIMA_Model.load_model(
             'C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/sewing_sarima_model.pkl')
         sewing_forecast = SARIMA_Model.get_time_series_forecast(sewing_model, 3)
