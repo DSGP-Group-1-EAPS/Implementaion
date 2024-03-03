@@ -1,11 +1,10 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request
 import pandas as pd
-import RandomForestClassificationModel
-import TimeSeriesModel
-import SARIMA_Model
+from RandomForestClassificationModel import rf_load_model, get_features, predict, get_high_prob_employee_codes
+from SARIMA_Model import ts_load_model, get_time_series_forecast, add_to_dataset
 import matplotlib.pyplot as plt
 import seaborn as sns
-import boto3
+from S3Connection import access_iam_role, get_resource, get_bucket
 
 app = Flask(__name__, template_folder='Templates')
 
@@ -41,46 +40,44 @@ def main():
             df = pd.read_excel(file)
         except Exception as e:
             return f'Error reading Excel file: {e}', 400
-        session = boto3.Session(
-            aws_access_key_id='AKIAZQ3DTKYSPHFJXFEG',
-            aws_secret_access_key='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',
-            region_name='ap-south-1'
-        )
 
-        s3 = session.resource('s3')
-        s3.Bucket('eapss3').upload_fileobj(file, f"{df['LeaveYear'][0]}_{df['LeaveMonth'][0]}_data.xlsx")
-        sewing_model = SARIMA_Model.load_model(
+        # Add IAm Role Credentials to the session
+        s3_iam_role= access_iam_role('AKIAZQ3DTKYSPHFJXFEG', 'zhysfEeBye5EF36jGFKLDdz22QcaVqgEasfBKzbn',
+                                'ap-south-1')
+        s3 = get_resource(s3_iam_role, 's3')
+
+        s3_bucket = get_bucket(s3, 'eapss3')
+        s3_bucket.upload_fileobj(file, f"{df['LeaveYear'][0]}_{df['LeaveMonth'][0]}_data.xlsx")
+
+        sewing_model = ts_load_model(
             'C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/sewing_sarima_model.pkl')
-        sewing_forecast = SARIMA_Model.get_time_series_forecast(sewing_model, 3)
+        sewing_forecast = get_time_series_forecast(sewing_model, 3)
 
-        mat_model = SARIMA_Model.load_model(
+        mat_model = ts_load_model(
             'C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/mat_sarima_model.pkl')
-        mat_forecast = SARIMA_Model.get_time_series_forecast(mat_model, 3)
+        mat_forecast = get_time_series_forecast(mat_model, 3)
 
-        jumper_model = SARIMA_Model.load_model(
+        jumper_model = ts_load_model(
             'C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/jumper_sarima_model.pkl')
-        jumper_forecast = SARIMA_Model.get_time_series_forecast(jumper_model, 3)
+        jumper_forecast = get_time_series_forecast(jumper_model, 3)
 
         print("SARIMA Forecast done")
-        ts_model = TimeSeriesModel.load_model(
-            'C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/arima_model.pkl')
-        forecast = TimeSeriesModel.get_time_series_forecast(ts_model, 3)
-        print(forecast[22])
+
         if df['LeaveYear'][0] == 2023 and df['LeaveMonth'][0] == 9:
-            updated_df = SARIMA_Model.add_to_dataset(df, sewing_forecast[22], mat_forecast[22], jumper_forecast[22])
+            updated_df = add_to_dataset(df, sewing_forecast[22], mat_forecast[22], jumper_forecast[22])
         elif df['LeaveYear'][0] == 2023 and df['LeaveMonth'][0] == 10:
-            updated_df = SARIMA_Model.add_to_dataset(df, sewing_forecast[23], mat_forecast[23], jumper_forecast[23])
+            updated_df = add_to_dataset(df, sewing_forecast[23], mat_forecast[23], jumper_forecast[23])
         elif df['LeaveYear'][0] == 2023 and df['LeaveMonth'][0] == 11:
-            updated_df = SARIMA_Model.add_to_dataset(df, sewing_forecast[24], mat_forecast[24], jumper_forecast[24])
+            updated_df = add_to_dataset(df, sewing_forecast[24], mat_forecast[24], jumper_forecast[24])
 
         print("ARIMA Forecast done")
-        df_selected = RandomForestClassificationModel.get_features(updated_df, rf_selected_features)
-        rf_model = RandomForestClassificationModel.load_model(
+        df_selected = get_features(updated_df, rf_selected_features)
+        rf_model = rf_load_model(
             'C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/rf_model.pkl')
-        predictions = RandomForestClassificationModel.predict(rf_model, df_selected)
+        predictions = predict(rf_model, df_selected)
 
-        employee_codes = RandomForestClassificationModel.get_high_prob_employee_codes(rf_model, df_selected,
-                                                                                      predictions)
+        employee_codes = get_high_prob_employee_codes(rf_model, df_selected,
+                                                      predictions)
         predictions_list = list(employee_codes)
         print(len(predictions_list))
         leave_reason_counts = df['Reason'].value_counts()

@@ -2,7 +2,7 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 import pickle
 
 
-def load_model(model_path):
+def ts_load_model(model_path):
     with open(model_path, 'rb') as file:
         return pickle.load(file)
 

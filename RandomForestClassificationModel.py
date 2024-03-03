@@ -12,7 +12,7 @@ def onehot_encode(df, column, prefix):
     return df
 
 
-def load_model(model_path):
+def rf_load_model(model_path):
     with open(model_path, 'rb') as file:
         return pickle.load(file)
 
