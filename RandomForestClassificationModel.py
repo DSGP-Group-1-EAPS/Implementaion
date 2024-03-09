@@ -43,12 +43,12 @@ def get_high_prob_employee_codes(model, df, predictions):
                                    zip(predictions, confidence_level_b) if probability > 0.9]
 
     # Display filtered predictions
-    for predicted, probability in high_confidence_predictions:
-        print(f"Predicted: {predicted}, Probability: {probability}")
+    probabilities = [probability for predicted, probability in high_confidence_predictions]
+
 
     # Filter predictions with probability > 0.9 and predicted as category B
     high_confidence_category_b = [df.iloc[i]['Encoded Code'] for i, (predicted, probability) in
                                   enumerate(zip(predictions, confidence_level_b)) if
                                   predicted == 'B' and probability > 0.9]
 
-    return high_confidence_category_b
+    return high_confidence_category_b, probabilities

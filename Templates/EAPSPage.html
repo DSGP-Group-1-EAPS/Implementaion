@@ -76,15 +76,27 @@
     </div>
 
 
-    <div class="predictions">
-        <h2>Predictions</h2>
-        <p>Employee leaves in category B</p>
-        <ul>
-            {% for prediction in predictions %}
-            <li class="prediction-item">AA{{ prediction }}</li>
+<div class="predictions">
+    <h2>Predictions</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Employee code</th>
+                <th>Probabilities</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for index in range(predictions|length) %}
+            <tr>
+                <td>AA{{ predictions[index] }}</td>
+                <td>{{ probabilities[index] }}</td>
+            </tr>
             {% endfor %}
-        </ul>
-    </div>
+        </tbody>
+    </table>
+</div>
+
+
 
 </body>
 </html>

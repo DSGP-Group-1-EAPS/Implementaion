@@ -42,23 +42,23 @@ def main():
             return f'Error reading Excel file: {e}', 400
 
         # Add IAm Role Credentials to the session
-        s3_iam_role= access_iam_role('AKIAZQ3DTKYSPHFJXFEG', 'zhysfEeBye5EF36jGFKLDdz22QcaVqgEasfBKzbn',
-                                'ap-south-1')
+        s3_iam_role = access_iam_role('AKIAZQ3DTKYSPHFJXFEG', 'zhysfEeBye5EF36jGFKLDdz22QcaVqgEasfBKzbn',
+                                      'ap-south-1')
         s3 = get_resource(s3_iam_role, 's3')
 
         s3_bucket = get_bucket(s3, 'eapss3')
         s3_bucket.upload_fileobj(file, f"{df['LeaveYear'][0]}_{df['LeaveMonth'][0]}_data.xlsx")
 
         sewing_model = ts_load_model(
-            'C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/sewing_sarima_model.pkl')
+            'Model/sewing_sarima_model.pkl')
         sewing_forecast = get_time_series_forecast(sewing_model, 3)
 
         mat_model = ts_load_model(
-            'C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/mat_sarima_model.pkl')
+            'Model/mat_sarima_model.pkl')
         mat_forecast = get_time_series_forecast(mat_model, 3)
 
         jumper_model = ts_load_model(
-            'C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/jumper_sarima_model.pkl')
+            'Model/jumper_sarima_model.pkl')
         jumper_forecast = get_time_series_forecast(jumper_model, 3)
 
         print("SARIMA Forecast done")
@@ -72,16 +72,19 @@ def main():
 
         print("ARIMA Forecast done")
         df_selected = get_features(updated_df, rf_selected_features)
+        print("Features selected")
         rf_model = rf_load_model(
-            'C:/Ranidu/University/2nd Year/2nd Year/Semester 1/DSGP/Model/rf_model.pkl')
+            'Model/rf_model.pkl')
+        print("Model loaded")
         predictions = predict(rf_model, df_selected)
+        print("Predictions done")
 
-        employee_codes = get_high_prob_employee_codes(rf_model, df_selected,
-                                                      predictions)
+        employee_codes, probabilities = get_high_prob_employee_codes(rf_model, df_selected,
+                                                                     predictions)
         predictions_list = list(employee_codes)
         print(len(predictions_list))
-        leave_reason_counts = df['Reason'].value_counts()
 
+        leave_reason_counts = df['Reason'].value_counts()
         # Create bar plot for leave reasons
         plt.figure(figsize=(10, 6))
         sns.barplot(x=leave_reason_counts.index, y=leave_reason_counts.values)
@@ -89,13 +92,13 @@ def main():
         plt.xlabel('Reason')
         plt.ylabel('Number of Leaves')
         plt.xticks(rotation=45)
-        plt.tight_layout()  # Adjust layout to prevent overlapping labels
+        plt.tight_layout()
         leave_reason_plot_path = 'Images/leave_reason_plot.jpeg'
         plt.savefig(leave_reason_plot_path)
 
-        return render_template('EAPSPage.html', predictions=predictions_list,
+        return render_template('EAPSPage.html', predictions=predictions_list, probabilities=probabilities,
                                leave_reason_plot_path=leave_reason_plot_path)
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=True)
