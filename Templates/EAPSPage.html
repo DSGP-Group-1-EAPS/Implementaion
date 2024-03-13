@@ -82,6 +82,7 @@
         <thead>
             <tr>
                 <th>Employee code</th>
+                <th>Department</th>
                 <th>Probabilities</th>
             </tr>
         </thead>
@@ -89,6 +90,7 @@
             {% for index in range(predictions|length) %}
             <tr>
                 <td>AA{{ predictions[index] }}</td>
+                <td>{{ departments[index] }}</td>
                 <td>{{ probabilities[index] }}</td>
             </tr>
             {% endfor %}

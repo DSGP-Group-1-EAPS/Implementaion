@@ -1,19 +1,16 @@
 from flask import Flask, render_template, request
 import pandas as pd
-from RandomForestClassificationModel import rf_load_model, get_features, predict, get_high_prob_employee_codes
-from SARIMA_Model import ts_load_model, get_time_series_forecast, add_to_dataset
+from RandomForestClassificationModel import rf_load_model, get_features, predict, get_high_prob_employee_info
+from SARIMA_Model import get_time_series_forecast, add_to_dataset, ts_load_model
 import matplotlib.pyplot as plt
 import seaborn as sns
-from S3Connection import access_iam_role, get_resource, get_bucket
+from S3Connection import access_iam_role, get_resource, get_bucket, get_model
 
 app = Flask(__name__, template_folder='Templates')
 
-rf_selected_features = ['DaysWorked', 'DayOfWeek', 'Encoded Code', 'LeaveMonth', 'Encoded Status',
-                        'Encoded Absenteeism Type', 'Encoded Shift', 'LeaveYear', 'NumOfLeaveDays', 'MonthlyTotal',
-                        'Reason_0', 'Reason_1', 'Reason_2', 'Reason_3', 'Reason_4', 'Reason_5',
-                        'Reason_6', 'Reason_7', 'Reason_8', 'Reason_9', 'Reason_10', 'Reason_11',
-                        'Reason_12', 'Reason_13', 'Reason_14', 'Reason_15', 'Reason_16', 'Reason_17',
-                        'Reason_18']
+rf_selected_features = ['Encoded Code', 'Encoded Department', 'YearsWorked', 'DayOfWeek',
+                        'LeaveMonth', 'LeaveYear', 'Encoded Reason', 'Encoded Status',
+                        'Encoded Absenteeism Type', 'Encoded Shift', 'MonthlyDeptTotal']
 
 
 @app.route('/')
@@ -41,27 +38,24 @@ def main():
         except Exception as e:
             return f'Error reading Excel file: {e}', 400
 
-        # Add IAm Role Credentials to the session
+        # Add IAM Role Credentials to the session
         s3_iam_role = access_iam_role('AKIAZQ3DTKYSPHFJXFEG', 'zhysfEeBye5EF36jGFKLDdz22QcaVqgEasfBKzbn',
                                       'ap-south-1')
         s3 = get_resource(s3_iam_role, 's3')
-
         s3_bucket = get_bucket(s3, 'eapss3')
-        s3_bucket.upload_fileobj(file, f"{df['LeaveYear'][0]}_{df['LeaveMonth'][0]}_data.xlsx")
+        s3_bucket.upload_fileobj(file, f"Datasets/{df['LeaveYear'][0]}_{df['LeaveMonth'][0]}_data.xlsx")
 
-        sewing_model = ts_load_model(
-            'Model/sewing_sarima_model.pkl')
+        get_model('eapss3', 'Models/Sewing_sarimax.pkl', 'Model/Sewing_sarimax.pkl')
+        get_model('eapss3', 'Models/Mat_sarimax.pkl', 'Model/Mat_sarimax.pkl')
+        get_model('eapss3', 'Models/Jumper_sarimax.pkl', 'Model/Jumper_sarimax.pkl')
+
+        sewing_model = ts_load_model('Model/Sewing_sarimax.pkl')
+        mat_model = ts_load_model('Model/Mat_sarimax.pkl')
+        jumper_model = ts_load_model('Model/Jumper_sarimax.pkl')
+
         sewing_forecast = get_time_series_forecast(sewing_model, 3)
-
-        mat_model = ts_load_model(
-            'Model/mat_sarima_model.pkl')
         mat_forecast = get_time_series_forecast(mat_model, 3)
-
-        jumper_model = ts_load_model(
-            'Model/jumper_sarima_model.pkl')
         jumper_forecast = get_time_series_forecast(jumper_model, 3)
-
-        print("SARIMA Forecast done")
 
         if df['LeaveYear'][0] == 2023 and df['LeaveMonth'][0] == 9:
             updated_df = add_to_dataset(df, sewing_forecast[22], mat_forecast[22], jumper_forecast[22])
@@ -70,17 +64,14 @@ def main():
         elif df['LeaveYear'][0] == 2023 and df['LeaveMonth'][0] == 11:
             updated_df = add_to_dataset(df, sewing_forecast[24], mat_forecast[24], jumper_forecast[24])
 
-        print("ARIMA Forecast done")
-        df_selected = get_features(updated_df, rf_selected_features)
-        print("Features selected")
-        rf_model = rf_load_model(
-            'Model/rf_model.pkl')
-        print("Model loaded")
-        predictions = predict(rf_model, df_selected)
-        print("Predictions done")
+        get_model('eapss3', 'Models/rf_model_ts_original.pkl', 'Model/rf_model_ts_original.pkl')
 
-        employee_codes, probabilities = get_high_prob_employee_codes(rf_model, df_selected,
-                                                                     predictions)
+        df_selected = get_features(updated_df, rf_selected_features)
+        rf_model = rf_load_model('Model/rf_model_ts_original.pkl')
+        predictions = predict(rf_model, df_selected)
+
+        employee_codes, departments, probabilities = get_high_prob_employee_info(rf_model, df_selected,
+                                                                                 predictions)
         predictions_list = list(employee_codes)
         print(len(predictions_list))
 
@@ -97,7 +88,7 @@ def main():
         plt.savefig(leave_reason_plot_path)
 
         return render_template('EAPSPage.html', predictions=predictions_list, probabilities=probabilities,
-                               leave_reason_plot_path=leave_reason_plot_path)
+                               departments=departments, leave_reason_plot_path=leave_reason_plot_path)
 
 
 if __name__ == '__main__':
